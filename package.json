@@ -1,0 +1,22 @@
+{
+  "name": "web2epub",
+  "version": "1.0.0",
+  "description": "Creates epub from webpages",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fsch0203/web2epub-js.git"
+  },
+  "keywords": [
+    "epub"
+  ],
+  "author": "Frans Schrijver",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fsch0203/web2epub-js/issues"
+  },
+  "homepage": "https://github.com/fsch0203/web2epub-js#readme"
+}
