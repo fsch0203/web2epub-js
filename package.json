@@ -18,5 +18,13 @@
   "bugs": {
     "url": "https://github.com/fsch0203/web2epub-js/issues"
   },
-  "homepage": "https://github.com/fsch0203/web2epub-js#readme"
+  "homepage": "https://github.com/fsch0203/web2epub-js#readme",
+  "dependencies": {
+    "adm-zip": "^0.4.13",
+    "express": "^4.16.4",
+    "image-downloader": "^3.4.2",
+    "node-readability": "^3.0.0",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {}
 }
