@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+        <package xmlns='http://www.idpf.org/2007/opf' version='2.0' unique-identifier='BookId'>
+            <metadata xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:opf='http://www.idpf.org/2007/opf'>
+                <dc:title>dsfgdsfgsdfg</dc:title>
+                <dc:creator opf:role='aut' opf:file-as=''></dc:creator>
+                <dc:identifier id='BookId' opf:scheme='URI'>20181217181445694</dc:identifier>
+                <dc:language>en</dc:language>
+                <dc:description>Description</dc:description>
+                <dc:date opf:event='publication'>2018</dc:date>
+                <dc:date opf:event='modification'>201812171814</dc:date>
+                <dc:subject>Unknown</dc:subject>
+                <meta name="cover" content="cover-image" />
+                </metadata>
+                <manifest>
+                    <item id="cover" href="content/cover.xhtml" media-type="application/xhtml+xml"/>
+                    <item id="cover-image" href="images/cover.png" media-type="image/png"/>
+                    <item id='ncx' media-type='application/x-dtbncx+xml' href='toc.ncx'/>
+                    <item id='toc' media-type='application/xhtml+xml' href='content/toc_page.xhtml'/>
+                            <item id="s1" href="content/s1.xhtml" media-type="application/xhtml+xml"/>
+        <item id="s2" href="content/s2.xhtml" media-type="application/xhtml+xml"/>
+
+                    <item id='css' media-type='text/css' href='css/epub.css'/>
+                </manifest>
+                <spine toc="ncx">
+                    <itemref idref='cover' linear='yes' />
+                    <itemref idref='toc'/>
+                    <itemref idref="s1" />
+<itemref idref="s2" />
+
+                </spine>
+                <guide>
+                    <reference type='toc' title='Contents' href='content/toc_page.xhtml'></reference>
+                </guide>
+            </package>
