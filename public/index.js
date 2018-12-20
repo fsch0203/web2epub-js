@@ -42,6 +42,8 @@ if (localStorage.metas) { //fill list with urls in localstorage
     $('#aut').val(metas[2]);
     $('#lan').val(metas[3]);
     $('#color-input').val(metas[4]);
+} else{
+    $('#color-input').val('#2196F3');
 }
 
 if (localStorage.selurls) { //fill list with urls in localstorage
@@ -72,7 +74,7 @@ function addurltolist(url) {
     let elem = '<li class="w3-display-container"><input name="url' + length + '" value="' + url +
         '" type="url" size="100%" class="w3-border-0 urls">' +
         '<span class="js-remove w3-button w3-transparent w3-display-right">&times;</span></li>';
-    console.log('elem: ' + elem)
+    // console.log('elem: ' + elem)
     $('#editable').append(elem);
     storeSelection(url, "selurls");
 }
@@ -94,7 +96,10 @@ window.onbeforeunload = function () {
     window.scrollTo(0, 0); //scroll to top
 }
 
-
+function isUrl(s) { //check if string is correct url
+    var regexp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+    return regexp.test(s);
+ }
 
 $(document).ready(function () {
     // namespace = '/test';
@@ -150,7 +155,11 @@ $(document).ready(function () {
         for (var i = 0; i < lines.length; i++) {
             //check if url is url #####
             if (lines[i].length > 0) {
-                addurltolist(lines[i]);
+                if (isUrl(lines[i])){
+                    addurltolist(lines[i]);
+                } else{
+                    alert(lines[i]+' is not a correct url');
+                }
             }
         }
         $("#popup01").hide();
@@ -161,8 +170,8 @@ $(document).ready(function () {
         console.log('Connected')
     });
     $('#makebook').click(function () {
-        // $('#log').val('');
         if (validateForm()) {
+            $('#log').val('');
             let urls = $('.urls').map(function () {
                 return $(this).val();
             }).get();
@@ -176,11 +185,12 @@ $(document).ready(function () {
             socket.emit('make_book', {
                 data: datas.toString()
             });
-            window.scrollBy(0, 1000);
+            window.scrollBy(0, 1000);                    
         }
     });
     socket.on('my_response', function (msg) {
-        $('#log').append($('<div/>').text(msg.data).html() + '\n');
+        let val = $('#log').val() + msg.data + '\n';
+        $('#log').val(val);
         let $textarea = $('#log');
         $textarea.scrollTop($textarea[0].scrollHeight);
     });
