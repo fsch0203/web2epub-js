@@ -9,43 +9,37 @@ const path = require('path');
 const zipFolder = require('zip-a-folder'); // https://www.npmjs.com/package/zip-a-folder
 const JSSoup = require('jssoup').default; // https://www.npmjs.com/package/jssoup
 
-//global variables
-var manifest = '';
-var spine = ''
-var tocItem = ''
-var tocPageItem = ''
-
 server.listen(80);
 app.use(express.static(__dirname + "/public"));
 
-function makeCover(epubPath, epubDatas, epubPub, epubId) {
+function makeCover(epubPath, epubDatas, epubId) {
     return new Promise((resolve, reject) => { //promise, so we know when all files are saved
-        let imgPath = path.join(epubPath, 'OEBPS', 'images');
-        // let coverName = `cover_${epubId}.svg`;
-        let coverName = `cover.svg`;
-        let imgFilePath = path.join(imgPath, coverName);
+        const epubPub = epubId.slice(0, 4) // publication year
+        const imgPath = path.join(epubPath, 'OEBPS', 'images');
+        const coverName = `cover.svg`;
+        const imgFilePath = path.join(imgPath, coverName);
         const width = 800
         const height = parseInt(width * 1.4);
-        let title = epubDatas[1];
-        let description = epubDatas[2];
-        let author = epubDatas[3];
-        let textBgColor = epubDatas[5];
-        let margin = 50; //of block
-        let padding = 30; //in block
-        let bh = 3; //block heigth ratio
-        let topBlock = parseInt(0.2 * height);
-        let fontsizeTit = Math.min(parseInt(1.5 * (width - margin) / title.length), 80);
-        let fontsizeDes = parseInt(Math.min(1.5 * (width - margin) / description.length, 0.8 * fontsizeTit));
-        let fontsizeAut = 50;
-        let fontsizePub = 20;
-        let fontstyleTit = 'verdana';
-        let fontstyleDes = 'verdana';
-        let fontstyleAut = 'arial';
-        let fontcolorTit = '#ffffff';
-        let fontcolorDes = 'black';
-        let fontcolorAut = '#333';
-        let closingText = `Web2Epub ${epubPub}`;
-        let blockHeight = Math.max(parseInt(bh * (fontsizeTit + fontsizeDes)), 360);
+        const title = epubDatas[1];
+        const description = epubDatas[2];
+        const author = epubDatas[3];
+        const textBgColor = epubDatas[5];
+        const margin = 50; //of block
+        const padding = 30; //in block
+        const bh = 3; //block heigth ratio
+        const topBlock = parseInt(0.2 * height);
+        const fontsizeTit = Math.min(parseInt(1.5 * (width - margin) / title.length), 80);
+        const fontsizeDes = parseInt(Math.min(1.5 * (width - margin) / description.length, 0.8 * fontsizeTit));
+        const fontsizeAut = 50;
+        const fontsizePub = 20;
+        const fontstyleTit = 'verdana';
+        const fontstyleDes = 'verdana';
+        const fontstyleAut = 'arial';
+        const fontcolorTit = '#ffffff';
+        const fontcolorDes = 'black';
+        const fontcolorAut = '#333';
+        const closingText = `Web2Epub ${epubPub}`;
+        const blockHeight = Math.max(parseInt(bh * (fontsizeTit + fontsizeDes)), 360);
 
         let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
             width="${width}" height="${height}">\n`;
@@ -74,14 +68,14 @@ function makeCover(epubPath, epubDatas, epubPub, epubId) {
     });
 }
 
-async function getImages(html, idx, epubPath) { //idx is index of webpage
+async function getImages(html, idx, epubPath, epub, socketID) { //idx is index of webpage
     let soup = new JSSoup(html);
     let imgPath = path.join(epubPath, 'OEBPS', 'images');
     let imgs = soup.findAll('img');
     for (let i = 0; i < imgs.length; i++) {
         const imgsrc = imgs[i].attrs.src; //link to sourcefile
         // console.log('imgsrc: '+ imgsrc);
-        let ext = imgsrc.slice(-3);
+        let ext = imgsrc.slice(-3).toLowerCase();
         if (ext === 'png' || ext === 'jpg') {
             let imgName = `img_${idx+1}_${i+1}.${ext}`;
             let imgFilePath = path.join(imgPath, imgName);
@@ -91,79 +85,89 @@ async function getImages(html, idx, epubPath) { //idx is index of webpage
                     dest: imgFilePath
                 });
                 if (ext === 'jpg') { //add image in manifest
-                    manifest += `        <item id="${imgName}" href="images/${imgName}" media-type="image/jpeg"/>\n`
+                    epub.manifest += `        <item id="${imgName}" href="images/${imgName}" media-type="image/jpeg"/>\n`
                 } else {
-                    manifest += `        <item id="${imgName}" href="images/${imgName}" media-type="image/png"/>\n`
+                    epub.manifest += `        <item id="${imgName}" href="images/${imgName}" media-type="image/png"/>\n`
                 }
                 imgs[i].attrs.src = path.join('..', 'images', imgName); // make new src-attribute in img-tag
                 let msg = 'Downloaded image : ' + imgName;
-                io.sockets.emit('my_response', { //send message to user
+                io.sockets.connected[socketID].emit('my_response', {
                     'data': msg
                 });
             } catch (e) {
                 console.error(e)
                 let msg = 'Error: could not download image : ' + imgName;
-                io.sockets.emit('my_response', {
+                io.sockets.connected[socketID].emit('my_response', {
                     'data': msg
                 });
             }
+        } else {
+            console.log('Error getting image: ' + imgsrc);
         }
     }
-    return soup;
+    return [soup, epub];
 }
 
-function readUrl(url, idx, epubPath) {
+function readUrl(url, idx, epubPath, epub, socketID) {
     return new Promise((resolve, reject) => {
         read(url, async function (err, article, meta) {
             if (err) {
                 console.log('Error: could not get ' + url);
                 let msg = 'Error: could not get webpage ' + url;
-                io.sockets.emit('my_response', {
+                io.sockets.connected[socketID].emit('my_response', {
                     'data': msg
                 });
                 resolve();
                 return;
             }
-            manifest += `        <item id="s${idx+1}" href="content/s${idx+1}.xhtml" media-type="application/xhtml+xml"/>\n`
-            spine += `<itemref idref="s${idx+1}" />\n`
-            tocItem += `<navPoint class='section' id='s${idx+1}' playOrder='${idx+3}'>
+            epub.manifest += `        <item id="s${idx+1}" href="content/s${idx+1}.xhtml" media-type="application/xhtml+xml"/>\n`;
+            epub.spine += `<itemref idref="s${idx+1}" />\n`;
+            epub.tocItem += `<navPoint class='section' id='s${idx+1}' playOrder='${idx+3}'>
             <navLabel><text>${article.title}</text></navLabel>
             <content src='content/s${idx+1}.xhtml'/>
-            </navPoint>`
-            tocPageItem += `<li><a href='s${idx+1}.xhtml'>${article.title}</a></li>`
+            </navPoint>`;
+            epub.tocPageItem += `<li><a href='s${idx+1}.xhtml'>${article.title}</a></li>`;
             // Main Article
             console.log('received webpage: ' + url);
             let msg = 'Received webpage: ' + url;
-            io.sockets.emit('my_response', {
+            io.sockets.connected[socketID].emit('my_response', {
                 'data': msg
             });
             let html = article.content; //cleaned content; todo: clean_html() for adding title and doctype
             html = `<h1>${article.title}</h1>${html}`
-            html = await getImages(html, idx, epubPath)
+            let array = await getImages(html, idx, epubPath, epub, socketID)
                 .catch((err) => console.log('Error getting images'));;
+            html = array[0];
+            epub = array[1];
             let urlFilePath = path.join(epubPath, 'OEBPS', 'content', `s${idx+1}.xhtml`);
             fs.writeFile(urlFilePath, html, function (err) {
                 if (err) console.log(err);
             });
             article.close();
-            resolve();
+            resolve(epub);
             // }
         });
     });
 }
 
-async function getWebPages(epubPath, epubUrls) {
+async function getWebPages(epubPath, epubUrls, socketID) {
+    var epub = {
+        manifest: '',
+        spine: '',
+        tocItem: '',
+        tocPageItem: ''
+    };
     for (let i = 0; i < epubUrls.length; i++) {
         let url = epubUrls[i];
-        url = (url.slice(-1) === '/') ? url.slice(0,-1) : url;
-        // console.log('getwebpages url: '+url);        
-        await readUrl(url, i, epubPath)
-            .catch((err) => console.log('Error reading url'));;
+        url = (url.slice(-1) === '/') ? url.slice(0, -1) : url;
+        epub = await readUrl(url, i, epubPath, epub, socketID)
+            .catch((err) => console.log('Error reading url: ' + err));;
     }
-    console.log('all pages received');
+    console.log('All pages received for socketID: '+socketID);
+    return epub;
 }
 
-function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, coverFileName) {
+function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, epub) {
     // writes all non-content files to disk
     return new Promise((resolve, reject) => { //promise, so we know when all files are saved
         epubTitle = epubDatas[1]
@@ -206,13 +210,13 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, coverFileName) 
                     <item id="cover-image" href="images/cover.svg" media-type="image/svg"/>
                     <item id='ncx' media-type='application/x-dtbncx+xml' href='toc.ncx'/>
                     <item id='toc' media-type='application/xhtml+xml' href='content/toc_page.xhtml'/>
-                    ${manifest}
+                    ${epub.manifest}
                     <item id='css' media-type='text/css' href='css/epub.css'/>
                 </manifest>
                 <spine toc="ncx">
                     <itemref idref='cover' linear='yes' />
                     <itemref idref='toc'/>
-                    ${spine}
+                    ${epub.spine}
                 </spine>
                 <guide>
                     <reference type='toc' title='Contents' href='content/toc_page.xhtml'></reference>
@@ -267,7 +271,7 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, coverFileName) 
                 <navLabel><text>Table of contents</text></navLabel>
                 <content src='content/toc_page.xhtml'/>
             </navPoint>
-            ${tocItem}
+            ${epub.tocItem}
         </navMap>
         </ncx>`;
         const promiseToc = new Promise((res, rej) =>
@@ -286,7 +290,7 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, coverFileName) 
             <body>
                 <h2>Table Of Contents</h2>
                 <ol class="toc_page-items">
-                ${tocPageItem}
+                ${epub.tocPageItem}
                 </ol>
             </body>
         </html>`
@@ -338,20 +342,20 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, coverFileName) 
     });
 }
 
-async function makeBook(datas) { // datas is string with metafields and urls
+async function makeBook(datas, socketID) { // datas is string with metafields and urls
     // first we make the folder structure for the ebook in unique folder in ./temp
     // then we make cover, get content from webpages and make epub files
     // then we zip the filestructure
     // and download the epub-file to the user
     manifest = spine = tocItem = tocPageItem = ''; // clear gobal variables
     const stamp = new Date().toISOString().replace(/:|-|\.|T|Z/g, ''); //e.g. 20181213223150036
-    let epubFileName = 'ebook_' + stamp + '.epub'; // todo: change in .epub
-    let epubfiles = path.join(__dirname, 'epubfiles'); //all final epubfiles in this folder
+    const epubFileName = 'ebook_' + stamp + '.epub'; // todo: change in .epub
+    const epubfiles = path.join(__dirname, 'epubfiles'); //all final epubfiles in this folder
     if (!fs.existsSync(epubfiles)) fs.mkdirSync(epubfiles);
-    let tempPath = path.join(__dirname, 'temp');
+    const tempPath = path.join(__dirname, 'temp');
     if (!fs.existsSync(tempPath)) fs.mkdirSync(tempPath);
-    let tempstamp = 'temp_' + stamp; //unique name
-    let epubPath = path.join(tempPath, tempstamp); //unique temp-folder for each book
+    const tempstamp = 'temp_' + stamp; //unique name
+    const epubPath = path.join(tempPath, tempstamp); //unique temp-folder for each book
     if (!fs.existsSync(epubPath)) fs.mkdirSync(epubPath);
     let xPath = path.join(epubPath, 'OEBPS');
     if (!fs.existsSync(xPath)) fs.mkdirSync(xPath);
@@ -363,57 +367,53 @@ async function makeBook(datas) { // datas is string with metafields and urls
     if (!fs.existsSync(xPath)) fs.mkdirSync(xPath);
     xPath = path.join(epubPath, 'META-INF');
     if (!fs.existsSync(xPath)) fs.mkdirSync(xPath);
-    let epubFilePath = path.join(epubfiles, epubFileName);
+    const epubFilePath = path.join(epubfiles, epubFileName);
 
-    epubMod = stamp.slice(0, 12) // modification date (seconds)
-    epubId = stamp // can be changed to e.g. ISBN
-    epubPub = stamp.slice(0, 4) // publication year
-    epubDatas = datas.split(',') //array
+    const epubMod = stamp.slice(0, 12) // modification date (seconds)
+    const epubId = stamp // can be changed to e.g. ISBN
+    const epubPub = stamp.slice(0, 4) // publication year
+    let epubDatas = datas.split(',') //array of metafields and urls
     // meta fields
     if (!epubDatas[1].trim()) epubDatas[1] = 'Title';
     if (!epubDatas[2].trim()) epubDatas[2] = 'Subtitle';
     if (!epubDatas[3].trim()) epubDatas[3] = 'Author';
     if (!epubDatas[4].trim()) epubDatas[4] = 'en'; // language
     if (!epubDatas[5].trim()) epubDatas[5] = '#008080'; // color cover
-    metaLength = parseInt(epubDatas[0]); // first element of epub_datas indicates number of meta fields
-    epubUrls = epubDatas.slice(metaLength+1); // array of urls
+    const metaLength = parseInt(epubDatas[0]); // first element of epub_datas indicates number of meta fields
+    const epubUrls = epubDatas.slice(metaLength + 1); // array of urls
 
     //Make cover
-    await makeCover(epubPath, epubDatas, epubPub, epubId);
+    await makeCover(epubPath, epubDatas, epubId);
 
     // Get all webpages
-    await getWebPages(epubPath, epubUrls)
-        .catch((err) => console.log('Error getting webpages'));;
+    epub = await getWebPages(epubPath, epubUrls, socketID) // epub = {manifest: '', spine: '', tocItem: '', tocPageItem: ''};
+        .catch((err) => console.log('Error getting webpages'));
 
     // then make epub-files
-    await makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, 'coverFileName')
-        .catch((err) => console.log('Error making Epub'));;
+    await makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, epub)
+        .catch((err) => console.log('Error making Epub'));
 
     // convert to epub-format
     await zipFolder.zip(epubPath, path.join(epubfiles, epubFileName))
-        .catch((err) => console.log('Error making zipfolder'));;
+        .catch((err) => console.log('Error making zipfolder'));
 
     // finish job
     fs.remove(epubPath, err => {
         if (err) return console.error(err);
-        // console.log('Deleted: '+epubPath);
     });
-      
-
-
-    console.log('Book is finished');
+    console.log('Book is finished for socketID: '+socketID);
     let msg = 'Book is finished';
-    io.sockets.emit('my_response', {
+    io.sockets.connected[socketID].emit('my_response', {
         'data': msg
     });
 
     // download
     let downloadPath = '/download' + Math.random().toString().slice(2); //unique secret path
     app.get(downloadPath, function (req, res) {
-        var file = epubFilePath;
-        res.download(file); // Set disposition and send it.
+        // var file = epubFilePath;
+        res.download(epubFilePath); // Uses module download
     });
-    io.sockets.emit('book_finished', { //start download
+    io.sockets.connected[socketID].emit('book_finished', {
         'data': downloadPath
     });
 }
@@ -421,14 +421,15 @@ async function makeBook(datas) { // datas is string with metafields and urls
 // make_book('5,tit,des,,lan,#123456,https://nl.wikipedia.org/wiki/Zijdevlinder, https://plato.stanford.edu/entries/adorno/');
 
 io.on('connection', function (socket) {
-    // socket.on('my other event', function (data) {
-    //     console.log(data);
-    // });
+    let socketID = socket.id; // id of connected user
+    socket.emit('my_response', {
+        'data': 'Connected'
+    });
     socket.on('make_book', function (data) {
-        console.log(data.data);
+        console.log(`Request to make book for socketID: ${socketID} -> ${data.data}`);
         socket.emit('my_response', {
             'data': 'Start making book'
         });
-        makeBook(data.data);
+        makeBook(data.data, socketID);
     });
 });
