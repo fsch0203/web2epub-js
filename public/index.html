@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html>
-<title>W3.CSS</title>
+    <head>
+        <title>Web2Epub</title>
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+        <link rel="manifest" href="/site.webmanifest">
+        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="theme-color" content="#ffffff">
+    </head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
@@ -18,7 +27,7 @@
         <a href="#" class="w3-bar-item w3-button" id="about_btn">About</a>
     </div>
     <div class="w3-container">
-        <h2 class="w3-text-blue">Make your Epub-book</h2>
+        <h2 class="w3-text-blue">Make your Epub-book in 3 steps</h2>
         <p>1. Fill in the fields</p>
         <form onsubmit="return validateForm()" action="http://localhost:5000/result" method="POST">
             <p>
@@ -28,11 +37,13 @@
             <p>
                 <label class="w3-text-blue"><b>Description</b></label>
                 <input class="w3-input w3-border meta data" id="des" name="des" type="search"></p>
-            <p>
-                <label class="w3-text-blue"><b>Author</b></label>
-                <input class="w3-input w3-border meta data" id="aut" name="aut" type="search"></p>
-
             <div class="w3-row">
+                <div class="w3-col s8">
+                    <p>
+                    <label class="w3-text-blue"><b>Author</b></label>
+                    <input class="w3-input w3-border meta data" id="aut" name="aut" type="search"></p>
+
+            <!-- <div class="w3-row">
                 <div class="w3-col s6">
                     <p>
                         <label class=" w3-text-blue"><b>Language</b></label>
@@ -111,9 +122,9 @@
                             <option value="CY">Welsh</option>
                             <option value="XH">Xhosa</option>
                         </select>
-                    </p>
+                    </p> -->
                 </div>
-                <div class="w3-col s6">
+                <div class="w3-col s4">
                     <p>
                         <label class=" w3-text-blue"><b>Color</b></label>
                         <input class="w3-input w3-border meta data color" id="color-input" name="color-input" type="color"></p>

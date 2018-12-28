@@ -21,12 +21,17 @@
   "homepage": "https://github.com/fsch0203/web2epub-js#readme",
   "dependencies": {
     "adm-zip": "^0.4.13",
+    "archiver": "^3.0.0",
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
     "image-downloader": "^3.4.2",
     "jssoup": "0.0.10",
     "node-readability": "^3.0.0",
+    "nodepub": "^2.0.7",
+    "pn": "^1.1.0",
     "socket.io": "^2.2.0",
+    "svg2img": "^0.5.0",
+    "svg2png": "^4.1.1",
     "svgdom": "0.0.15",
     "zip-a-folder": "0.0.6"
   },

@@ -40,8 +40,8 @@ if (localStorage.metas) { //fill list with urls in localstorage
     $('#tit').val(metas[0]);
     $('#des').val(metas[1]);
     $('#aut').val(metas[2]);
-    $('#lan').val(metas[3]);
-    $('#color-input').val(metas[4]);
+    // $('#lan').val(metas[3]);
+    $('#color-input').val(metas[3]);
 } else{
     $('#color-input').val('#2196F3');
 }
@@ -105,9 +105,7 @@ $(document).ready(function () {
     // namespace = '/test';
     namespace = '';
     var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
-
     $("#popup01").hide();
-
     $('#about_btn').on('click', function () {
         // $('#popup_textarea').hide();
         var d = new Date();
@@ -115,8 +113,31 @@ $(document).ready(function () {
         // $("#favicon").removeClass("favicon2");
         // var hd = _lg.About2;
         var hd = 'About';
-        var msg = "<p>" + 'Message' + "</p>";
-        msg += "<p><a href='https://radios2s.scriptel.nl' target='_blank'>radios2s.scriptel.nl</a></p>";
+        var msg = `<h2>Web2epub</h2>
+        <p>Version: 0.1.0</p>
+        <p>Author: Frans Schrijver</p>
+        <p>Licence: MIT</p>
+        <p><a href='https://www.web2epub.com' target='_blank'>www.web2epub.com</a></p>
+        `;
+        // showAbout(hd,msg);
+        $("#popupheader").html(hd);
+        $("#popupmessage").html(msg);
+        $("#popup_textarea, #popup_cancel").hide();
+        $("#popup_ok").show();
+        $("#popup01").fadeIn();
+    });
+    $('#help_btn').on('click', function () {
+        // $('#popup_textarea').hide();
+        var d = new Date();
+        var yyyy = d.getFullYear();
+        // $("#favicon").removeClass("favicon2");
+        // var hd = _lg.About2;
+        var hd = 'Help';
+        var msg = `<h2>Web2epub</h2>
+        <p>Web2epub is a simple web-application to make ebooks from one or more webpages.</p>
+        <p>Just fill in the fields for the title, subtitle and author of you book and choose a color for the front. Then paste one or more links (urls) to webpages and you're ready to go. Every webpage will be a chapter in the book. You can change the order with drag&drop.</p>
+        <p>Web2epub is useful to make books from articles of wikipedia or other information websites. You can read the books on your e-reader, computer, tablet or smartphone. </p>
+        `;
         // showAbout(hd,msg);
         $("#popupheader").html(hd);
         $("#popupmessage").html(msg);
