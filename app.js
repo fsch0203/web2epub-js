@@ -7,18 +7,17 @@ const read = require('node-readability'); // https://www.npmjs.com/package/node-
 const fs = require('fs-extra'); //https://www.npmjs.com/package/fs-extra
 const path = require('path');
 const zipFolder = require(path.join(__dirname, 'zip-a-folder-fs')); // https://www.npmjs.com/package/zip-a-folder
-// const zipFolder = require('zip-a-folder'); // https://www.npmjs.com/package/zip-a-folder
 const JSSoup = require('jssoup').default; // https://www.npmjs.com/package/jssoup
+// const version = process.env.npm_package_version
 
 server.listen(3002);
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 function makeCover(epubPath, epubDatas, epubId) {
     return new Promise((resolve, reject) => { //promise, so we know when all files are saved
         const epubPub = epubId.slice(0, 4) // publication year
         const imgPath = path.join(epubPath, 'OEBPS', 'images');
-        const coverName = `cover.svg`;
+        const coverName = `cover.png`;
         const imgFilePath = path.join(imgPath, coverName);
         const width = 800
         const height = parseInt(width * 1.4);
@@ -199,7 +198,7 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, epubGlobals) {
                 <meta name="cover" content="cover-image" />
                 </metadata>
                 <manifest>
-                    <item id="cover-image" href="images/cover.svg" media-type="image/svg+xml"/>
+                    <item id="cover-image" href="images/cover.png" media-type="image/png"/>
                     <item id="cover" href="content/cover.xhtml" media-type="application/xhtml+xml"/>
                     <item id='ncx' media-type='application/x-dtbncx+xml' href='toc.ncx'/>
                     <item id='toc' media-type='application/xhtml+xml' href='content/toc_page.xhtml'/>
@@ -234,10 +233,13 @@ function makeEpub(epubPath, epubDatas, epubId, epubPub, epubMod, epubGlobals) {
         </head>
         <body>
             <div id="cover-image">
-                <div class='cover'><img style='height: 100%;width: 100%;' src='../images/cover.svg' alt='${epubTitle}'/></div>
+                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="100%" height="100%" viewBox="0 0 800 1200" preserveAspectRatio="none">
+                    <image width="800" height="1200" xlink:href="data:image/png;base64,${epubDatas[5]}"/>
+                </svg>
             </div>
         </body>
         </html>`;
+        // <img style='height: 100%;width: 100%;' src='../images/cover.png' alt='${epubTitle}'/>
         const promiseCoverXhtml = new Promise((res, rej) =>
             fs.writeFile(path.join(epubPath, 'OEBPS', 'content', 'cover.xhtml'), coverHtml, function (err) {
                 if (err) console.log(err);
@@ -367,17 +369,23 @@ async function makeBook(datas, socketID) { // datas is string with metafields an
     const epubId = stamp // can be changed to e.g. ISBN
     const epubPub = parseInt(stamp.slice(0, 4)); // publication year
     let epubDatas = datas.split(','); //array of metafields and urls
+    const imgPath = path.join(epubPath, 'OEBPS', 'images');
+    const coverName = `cover.png`;
+    const imgFilePath = path.join(imgPath, coverName);
     // meta fields
     if (!epubDatas[1].trim()) epubDatas[1] = 'Title';
-    if (!epubDatas[2].trim()) epubDatas[2] = 'Subtitle';
-    if (!epubDatas[3].trim()) epubDatas[3] = 'Author';
-    if (!epubDatas[4].trim()) epubDatas[4] = 'en'; // language
-    if (!epubDatas[5].trim()) epubDatas[5] = '#008080'; // color cover
+    if (!epubDatas[2].trim()) epubDatas[2] = '';
+    if (!epubDatas[3].trim()) epubDatas[3] = 'Anonymous';
+    // if (!epubDatas[4].trim()) epubDatas[4] = 'en'; // language
+    if (!epubDatas[4].trim()) epubDatas[4] = '#008080'; // color cover
+    var buf = new Buffer(epubDatas[5], 'base64'); //cover.png
+    fs.writeFile(imgFilePath, buf);
+
     const metaLength = parseInt(epubDatas[0]); // first element of epub_datas indicates number of meta fields
     const epubUrls = epubDatas.slice(metaLength + 1); // array of urls
 
     //Make cover
-    await makeCover(epubPath, epubDatas, epubId);
+    // await makeCover(epubPath, epubDatas, epubId);
 
     // Get all webpages
     epubGlobals = await getWebPages(epubPath, epubUrls, socketID) // epubGlobals = {manifest: '', spine: '', tocItem: '', tocPageItem: ''};
@@ -421,7 +429,8 @@ io.on('connection', function (socket) {
         'data': 'Connected'
     });
     socket.on('make_book', function (data) {
-        console.log(`Request to make book for socketID: ${socketID} -> ${data.data}`);
+        // console.log(`Request to make book for socketID: ${socketID} -> ${data.data}`);
+        console.log(`Request to make book for socketID: ${socketID}`);
         socket.emit('my_response', {
             'data': 'Start making book'
         });
